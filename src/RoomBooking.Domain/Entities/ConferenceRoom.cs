@@ -5,6 +5,8 @@ namespace RoomBooking.Domain.Entities;
 public sealed class ConferenceRoom
 {
     private const int MaximumNameLength = 100;
+    
+    private readonly List<AdditionalService> _availableServices = new();
 
     private ConferenceRoom()
     {
@@ -34,6 +36,7 @@ public sealed class ConferenceRoom
     public DateTimeOffset CreatedAt { get; private set; }
 
     public DateTimeOffset UpdatedAt { get; private set; }
+    public IReadOnlyCollection<AdditionalService> AvailableServices => _availableServices.AsReadOnly();
 
     public void Rename(string name)
     {
@@ -97,5 +100,38 @@ public sealed class ConferenceRoom
         }
 
         return hourlyRate;
+    }
+
+    public void AddService(AdditionalService service)
+    {
+        ArgumentNullException.ThrowIfNull(service);
+
+        if (!service.IsActive)
+        {
+            throw new DomainException("Inactive service cannot be added to a room.");
+        }
+
+        var serviceAlreadyAdded = _availableServices.Any(availableService => availableService.Id == service.Id);
+
+        if (serviceAlreadyAdded)
+        {
+            throw new DomainException("Service is already available in this room.");
+        }
+
+        _availableServices.Add(service);
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void RemoveService(Guid serviceId)
+    {
+        var service = _availableServices.FirstOrDefault(availableService => availableService.Id == serviceId);
+
+        if (service is null)
+        {
+            throw new DomainException("Service is not available in this room.");
+        }
+        
+        _availableServices.Remove(service);
+        UpdatedAt = DateTimeOffset.UtcNow;
     }
 }
