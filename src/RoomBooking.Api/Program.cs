@@ -1,9 +1,16 @@
+using RoomBooking.Infrastructure;
+
 var builder = WebApplication.CreateBuilder(args);
+
 
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+var connectionString = builder.Configuration.GetConnectionString("Database") ?? throw new InvalidOperationException("Database connection string is not configured.");
+
+builder.Services.AddInfrastructure(connectionString);
 
 var app = builder.Build();
 
